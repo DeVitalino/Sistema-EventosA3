@@ -1,15 +1,12 @@
 package app;
 
+import model.Evento;
+
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Scanner;
 
-
 public class Entrada {
-
-    public static final DateTimeFormatter FORMATO_DATA =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private static final Scanner scanner = new Scanner(System.in);
 
@@ -43,7 +40,7 @@ public class Entrada {
         while (true) {
             System.out.print(mensagem);
             try {
-                return LocalDateTime.parse(scanner.nextLine().trim(), FORMATO_DATA);
+                return LocalDateTime.parse(scanner.nextLine().trim(), Evento.FORMATO_DATA);
             } catch (DateTimeParseException e) {
                 System.out.println("Data inválida. Exemplo: 10/10/2026 19:30");
             }

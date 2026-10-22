@@ -51,7 +51,7 @@ public class Menu {
         System.out.println("\n--- " + texto.toUpperCase() + " ---");
     }
 
-    //parte de usuarios
+    // usuários
 
     private void cadastrarUsuario() {
         titulo("Cadastro de usuário");
@@ -127,21 +127,41 @@ public class Menu {
                 .collect(Collectors.joining(", "));
     }
 
-    // parte de eventos
+    // eventos
 
     private void cadastrarEvento() {
         titulo("Cadastro de evento");
 
+        int tipo = lerTipoEvento();
         String nome = Entrada.texto("Nome do evento: ");
-        String endereco = Entrada.texto("Endereço (Porto Alegre): ");
         Categoria categoria = escolherCategoria();
         LocalDateTime horario = Entrada.dataHora("Data e horário (dd/MM/yyyy HH:mm): ");
         String descricao = Entrada.texto("Descrição: ");
         int duracao = lerDuracao();
 
-        Evento evento = eventos.cadastrar(nome, endereco, categoria, horario, descricao, duracao);
+        Evento evento;
+        if (tipo == 1) {
+            String endereco = Entrada.texto("Endereço (Porto Alegre): ");
+            evento = eventos.cadastrarPresencial(nome, endereco, categoria, horario, descricao, duracao);
+        } else {
+            String plataforma = Entrada.texto("Plataforma (ex.: Zoom, YouTube): ");
+            String link = Entrada.texto("Link de acesso: ");
+            evento = eventos.cadastrarOnline(nome, plataforma, link, categoria, horario, descricao, duracao);
+        }
 
         System.out.println("Evento cadastrado! ID: " + evento.getId());
+    }
+
+    private int lerTipoEvento() {
+        System.out.println("1 - Presencial");
+        System.out.println("2 - Online");
+
+        int tipo = Entrada.inteiro("Tipo do evento: ");
+        while (tipo != 1 && tipo != 2) {
+            System.out.println("Tipo inválido.");
+            tipo = Entrada.inteiro("Tipo do evento: ");
+        }
+        return tipo;
     }
 
     private int lerDuracao() {
@@ -163,7 +183,7 @@ public class Menu {
         }
 
         for (Evento evento : lista) {
-            mostrarEvento(evento);
+            evento.exibirDetalhes();
         }
     }
 
@@ -184,7 +204,7 @@ public class Menu {
         }
 
         for (Evento evento : encontrados) {
-            mostrarEvento(evento);
+            evento.exibirDetalhes();
         }
     }
 
@@ -210,29 +230,11 @@ public class Menu {
 
         System.out.println("Acontecendo agora para " + usuario.getNome() + ":");
         for (Evento evento : emAndamento) {
-            mostrarEvento(evento);
+            evento.exibirDetalhes();
         }
     }
 
-    private void mostrarEvento(Evento evento) {
-        System.out.println("\nID: " + evento.getId());
-        System.out.println("Nome: " + evento.getNome());
-        System.out.println("Endereço: " + evento.getEndereco() + " - " + evento.getCidade());
-        System.out.println("Categoria: " + evento.getCategoria().getDescricao());
-        System.out.println("Horário: " + evento.getHorario().format(Entrada.FORMATO_DATA));
-        System.out.println("Duração: " + evento.getDuracaoMinutos() + " minutos");
-        System.out.println("Descrição: " + evento.getDescricao());
-
-        if (evento.estaAcontecendo()) {
-            System.out.println("Status: acontecendo agora");
-        } else if (evento.jaTerminou()) {
-            System.out.println("Status: encerrado");
-        } else {
-            System.out.println("Status: ainda vai acontecer");
-        }
-    }
-
-    // parte de categorias
+    // categorias
 
     private void listarCategorias() {
         for (Categoria categoria : Categoria.values()) {

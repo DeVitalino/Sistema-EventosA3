@@ -2,6 +2,8 @@ package service;
 
 import model.Categoria;
 import model.Evento;
+import model.EventoOnline;
+import model.EventoPresencial;
 import model.Usuario;
 
 import java.time.LocalDateTime;
@@ -15,9 +17,17 @@ public class EventoService {
     private final List<Evento> eventos = new ArrayList<>();
     private int proximoId = 1;
 
-    public Evento cadastrar(String nome, String endereco, Categoria categoria,
-                            LocalDateTime horario, String descricao, int duracaoMinutos) {
-        Evento evento = new Evento(proximoId++, nome, endereco, CIDADE, categoria,
+    public Evento cadastrarPresencial(String nome, String endereco, Categoria categoria,
+                                      LocalDateTime horario, String descricao, int duracaoMinutos) {
+        Evento evento = new EventoPresencial(proximoId++, nome, endereco, CIDADE, categoria,
+                horario, descricao, duracaoMinutos);
+        eventos.add(evento);
+        return evento;
+    }
+
+    public Evento cadastrarOnline(String nome, String plataforma, String link, Categoria categoria,
+                                  LocalDateTime horario, String descricao, int duracaoMinutos) {
+        Evento evento = new EventoOnline(proximoId++, nome, plataforma, link, categoria,
                 horario, descricao, duracaoMinutos);
         eventos.add(evento);
         return evento;
