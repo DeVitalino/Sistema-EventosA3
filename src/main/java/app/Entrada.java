@@ -1,15 +1,13 @@
 package app;
 
+import model.Evento;
+
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Scanner;
 
-
+// leitura segura do teclado
 public class Entrada {
-
-    public static final DateTimeFormatter FORMATO_DATA =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private static final Scanner scanner = new Scanner(System.in);
 
@@ -28,6 +26,19 @@ public class Entrada {
         return texto;
     }
 
+    public static boolean confirmar(String mensagem) {
+        while (true) {
+            String resposta = texto(mensagem + " (S/N): ").toUpperCase();
+            if (resposta.equals("S")) {
+                return true;
+            }
+            if (resposta.equals("N")) {
+                return false;
+            }
+            System.out.println("Responda com S ou N.");
+        }
+    }
+
     public static int inteiro(String mensagem) {
         while (true) {
             System.out.print(mensagem);
@@ -43,7 +54,7 @@ public class Entrada {
         while (true) {
             System.out.print(mensagem);
             try {
-                return LocalDateTime.parse(scanner.nextLine().trim(), FORMATO_DATA);
+                return LocalDateTime.parse(scanner.nextLine().trim(), Evento.FORMATO_DATA);
             } catch (DateTimeParseException e) {
                 System.out.println("Data inválida. Exemplo: 10/10/2026 19:30");
             }

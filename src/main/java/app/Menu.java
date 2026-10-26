@@ -7,6 +7,7 @@ import service.EventoService;
 import service.UsuarioService;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,12 +29,15 @@ public class Menu {
                 case 2 -> cadastrarEvento();
                 case 3 -> listarUsuarios();
                 case 4 -> listarEventos();
-                case 5 -> buscarPorCategoria();
-                case 6 -> verNotificacoes();
-                case 7 -> System.out.println("Programa encerrado.");
-                default -> System.out.println("Opção inválida. Escolha de 1 a 7.");
+                case 5 -> consultarPorSituacao();
+                case 6 -> buscarPorCategoria();
+                case 7 -> verNotificacoes();
+                case 8 -> participarDeEvento();
+                case 9 -> verParticipacoes();
+                case 10 -> System.out.println("Programa encerrado.");
+                default -> System.out.println("Opção inválida. Escolha de 1 a 10.");
             }
-        } while (opcao != 7);
+        } while (opcao != 10);
     }
 
     private void mostrarOpcoes() {
@@ -41,17 +45,20 @@ public class Menu {
         System.out.println("1 - Cadastrar usuário");
         System.out.println("2 - Cadastrar evento");
         System.out.println("3 - Listar usuários");
-        System.out.println("4 - Listar eventos");
-        System.out.println("5 - Buscar eventos por categoria");
-        System.out.println("6 - Ver notificações");
-        System.out.println("7 - Sair");
+        System.out.println("4 - Listar eventos (por horário)");
+        System.out.println("5 - Eventos por situação");
+        System.out.println("6 - Buscar eventos por categoria");
+        System.out.println("7 - Ver notificações");
+        System.out.println("8 - Participar de um evento");
+        System.out.println("9 - Minhas participações");
+        System.out.println("10 - Sair");
     }
 
     private void titulo(String texto) {
         System.out.println("\n--- " + texto.toUpperCase() + " ---");
     }
 
-    //parte de usuarios
+    // ---------- usuários ----------
 
     private void cadastrarUsuario() {
         titulo("Cadastro de usuário");
@@ -99,6 +106,20 @@ public class Menu {
         }
     }
 
+    // pede o ID e devolve o usuário ou null se não der para continuar
+    private Usuario pedirUsuario() {
+        if (usuarios.listar().isEmpty()) {
+            System.out.println("Nenhum usuário cadastrado.");
+            return null;
+        }
+
+        Usuario usuario = usuarios.buscarPorId(Entrada.inteiro("ID do usuário: "));
+        if (usuario == null) {
+            System.out.println("Usuário não encontrado.");
+        }
+        return usuario;
+    }
+
     private void listarUsuarios() {
         titulo("Usuários cadastrados");
 
@@ -127,21 +148,41 @@ public class Menu {
                 .collect(Collectors.joining(", "));
     }
 
-    // parte de eventos
+    // ---------- eventos ----------
 
     private void cadastrarEvento() {
         titulo("Cadastro de evento");
 
+        int tipo = lerTipoEvento();
         String nome = Entrada.texto("Nome do evento: ");
-        String endereco = Entrada.texto("Endereço (Porto Alegre): ");
         Categoria categoria = escolherCategoria();
         LocalDateTime horario = Entrada.dataHora("Data e horário (dd/MM/yyyy HH:mm): ");
         String descricao = Entrada.texto("Descrição: ");
         int duracao = lerDuracao();
 
-        Evento evento = eventos.cadastrar(nome, endereco, categoria, horario, descricao, duracao);
+        Evento evento;
+        if (tipo == 1) {
+            String endereco = Entrada.texto("Endereço (Porto Alegre): ");
+            evento = eventos.cadastrarPresencial(nome, endereco, categoria, horario, descricao, duracao);
+        } else {
+            String plataforma = Entrada.texto("Plataforma (ex.: Zoom, YouTube): ");
+            String link = Entrada.texto("Link de acesso: ");
+            evento = eventos.cadastrarOnline(nome, plataforma, link, categoria, horario, descricao, duracao);
+        }
 
         System.out.println("Evento cadastrado! ID: " + evento.getId());
+    }
+
+    private int lerTipoEvento() {
+        System.out.println("1 - Presencial");
+        System.out.println("2 - Online");
+
+        int tipo = Entrada.inteiro("Tipo do evento: ");
+        while (tipo != 1 && tipo != 2) {
+            System.out.println("Tipo inválido.");
+            tipo = Entrada.inteiro("Tipo do evento: ");
+        }
+        return tipo;
     }
 
     private int lerDuracao() {
@@ -156,14 +197,49 @@ public class Menu {
     private void listarEventos() {
         titulo("Eventos cadastrados");
 
-        List<Evento> lista = eventos.listar();
+        List<Evento> lista = eventos.listarOrdenados();
         if (lista.isEmpty()) {
             System.out.println("Nenhum evento cadastrado.");
             return;
         }
 
         for (Evento evento : lista) {
-            mostrarEvento(evento);
+            evento.exibirDetalhes();
+        }
+    }
+
+    private void consultarPorSituacao() {
+        titulo("Eventos por situação");
+        System.out.println("1 - Acontecendo agora");
+        System.out.println("2 - Próximos");
+        System.out.println("3 - Encerrados");
+        System.out.println("4 - Todos, separados por situação");
+        System.out.println("0 - Voltar");
+
+        switch (Entrada.inteiro("Opção: ")) {
+            case 1 -> mostrarGrupo("Acontecendo agora", eventos.emAndamento());
+            case 2 -> mostrarGrupo("Próximos", eventos.proximos());
+            case 3 -> mostrarGrupo("Encerrados", eventos.encerrados());
+            case 4 -> {
+                mostrarGrupo("Acontecendo agora", eventos.emAndamento());
+                mostrarGrupo("Próximos", eventos.proximos());
+                mostrarGrupo("Encerrados", eventos.encerrados());
+            }
+            case 0 -> { }
+            default -> System.out.println("Opção inválida.");
+        }
+    }
+
+    private void mostrarGrupo(String titulo, List<Evento> lista) {
+        System.out.println("\n=== " + titulo + " (" + lista.size() + ") ===");
+
+        if (lista.isEmpty()) {
+            System.out.println("Nenhum evento.");
+            return;
+        }
+
+        for (Evento evento : lista) {
+            evento.exibirDetalhes();
         }
     }
 
@@ -184,21 +260,15 @@ public class Menu {
         }
 
         for (Evento evento : encontrados) {
-            mostrarEvento(evento);
+            evento.exibirDetalhes();
         }
     }
 
     private void verNotificacoes() {
         titulo("Notificações");
 
-        if (usuarios.listar().isEmpty()) {
-            System.out.println("Nenhum usuário cadastrado.");
-            return;
-        }
-
-        Usuario usuario = usuarios.buscarPorId(Entrada.inteiro("ID do usuário: "));
+        Usuario usuario = pedirUsuario();
         if (usuario == null) {
-            System.out.println("Usuário não encontrado.");
             return;
         }
 
@@ -210,29 +280,99 @@ public class Menu {
 
         System.out.println("Acontecendo agora para " + usuario.getNome() + ":");
         for (Evento evento : emAndamento) {
-            mostrarEvento(evento);
+            evento.exibirDetalhes();
         }
     }
 
-    private void mostrarEvento(Evento evento) {
-        System.out.println("\nID: " + evento.getId());
-        System.out.println("Nome: " + evento.getNome());
-        System.out.println("Endereço: " + evento.getEndereco() + " - " + evento.getCidade());
-        System.out.println("Categoria: " + evento.getCategoria().getDescricao());
-        System.out.println("Horário: " + evento.getHorario().format(Entrada.FORMATO_DATA));
-        System.out.println("Duração: " + evento.getDuracaoMinutos() + " minutos");
-        System.out.println("Descrição: " + evento.getDescricao());
+    // ---------- participações ----------
 
-        if (evento.estaAcontecendo()) {
-            System.out.println("Status: acontecendo agora");
-        } else if (evento.jaTerminou()) {
-            System.out.println("Status: encerrado");
+    private void participarDeEvento() {
+        titulo("Participar de um evento");
+
+        Usuario usuario = pedirUsuario();
+        if (usuario == null) {
+            return;
+        }
+
+        List<Evento> disponiveis = new ArrayList<>(eventos.emAndamento());
+        disponiveis.addAll(eventos.proximos());
+
+        if (disponiveis.isEmpty()) {
+            System.out.println("Nenhum evento disponível no momento.");
+            return;
+        }
+
+        System.out.println("\nEventos disponíveis:");
+        for (Evento evento : disponiveis) {
+            evento.exibirDetalhes();
+        }
+
+        int id = Entrada.inteiro("\nID do evento (0 para voltar): ");
+        if (id == 0) {
+            return;
+        }
+
+        Evento escolhido = eventos.buscarPorId(id);
+        if (escolhido == null || escolhido.jaTerminou()) {
+            System.out.println("Evento não encontrado ou já encerrado.");
+            return;
+        }
+
+        if (usuario.participaDe(escolhido)) {
+            System.out.println("A participação nesse evento já está confirmada.");
+            return;
+        }
+
+        if (Entrada.confirmar("Confirmar participação em \"" + escolhido.getNome() + "\"?")) {
+            usuario.confirmarParticipacao(escolhido);
+            System.out.println("Participação confirmada!");
         } else {
-            System.out.println("Status: ainda vai acontecer");
+            System.out.println("Participação não confirmada.");
         }
     }
 
-    // parte de categorias
+    private void verParticipacoes() {
+        titulo("Participações confirmadas");
+
+        Usuario usuario = pedirUsuario();
+        if (usuario == null) {
+            return;
+        }
+
+        List<Evento> lista = usuario.getParticipacoes();
+        if (lista.isEmpty()) {
+            System.out.println(usuario.getNome() + " ainda não confirmou participação em nenhum evento.");
+            return;
+        }
+
+        for (Evento evento : lista) {
+            evento.exibirDetalhes();
+        }
+
+        if (!Entrada.confirmar("\nDeseja cancelar alguma participação?")) {
+            return;
+        }
+
+        Evento escolhido = eventos.buscarPorId(Entrada.inteiro("ID do evento a cancelar: "));
+        if (escolhido == null || !usuario.participaDe(escolhido)) {
+            System.out.println("Nenhuma participação confirmada com esse ID.");
+            return;
+        }
+
+        if (escolhido.jaTerminou()) {
+            System.out.println("Esse evento já foi encerrado e não pode ser cancelado.");
+            return;
+        }
+
+        if (Entrada.confirmar("Cancelar participação em \"" + escolhido.getNome() + "\"?")) {
+            usuario.cancelarParticipacao(escolhido);
+            System.out.println("Participação cancelada.");
+        } else {
+            System.out.println("A participação foi mantida.");
+        }
+    }
+
+    // ---------- categorias ----------
 
     private void listarCategorias() {
         for (Categoria categoria : Categoria.values()) {
