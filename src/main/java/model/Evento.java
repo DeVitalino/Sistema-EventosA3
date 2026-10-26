@@ -25,12 +25,10 @@ public abstract class Evento {
         this.duracaoMinutos = duracaoMinutos;
     }
 
-    // cada tipo de evento define o seu próprio texto
     public abstract String getTipo();
 
     public abstract String getLocal();
 
-    // as subclasses podem acrescentar linhas a este método
     public void exibirDetalhes() {
         System.out.println("\nID: " + id);
         System.out.println("Nome: " + nome);
@@ -55,6 +53,10 @@ public abstract class Evento {
 
     public LocalDateTime getFim() {
         return horario.plusMinutes(duracaoMinutos);
+    }
+
+    public boolean aindaVaiAcontecer() {
+        return LocalDateTime.now().isBefore(horario);
     }
 
     public boolean estaAcontecendo() {

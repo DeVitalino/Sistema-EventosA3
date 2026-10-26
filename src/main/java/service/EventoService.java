@@ -8,11 +8,14 @@ import model.Usuario;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class EventoService {
 
     private static final String CIDADE = "Porto Alegre";
+
+    private static final Comparator<Evento> POR_HORARIO = Comparator.comparing(Evento::getHorario);
 
     private final List<Evento> eventos = new ArrayList<>();
     private int proximoId = 1;
@@ -37,24 +40,44 @@ public class EventoService {
         return List.copyOf(eventos);
     }
 
-    public List<Evento> buscarPorCategoria(Categoria categoria) {
-        List<Evento> resultado = new ArrayList<>();
-        for (Evento evento : eventos) {
-            if (evento.getCategoria() == categoria) {
-                resultado.add(evento);
-            }
-        }
-        return resultado;
+
+    public List<Evento> listarOrdenados() {
+        return eventos.stream().sorted(POR_HORARIO).toList();
     }
 
-    // eventos em andamento que interessam ao usuário
+    public List<Evento> emAndamento() {
+        return eventos.stream()
+                .filter(Evento::estaAcontecendo)
+                .sorted(POR_HORARIO)
+                .toList();
+    }
+
+    public List<Evento> proximos() {
+        return eventos.stream()
+                .filter(Evento::aindaVaiAcontecer)
+                .sorted(POR_HORARIO)
+                .toList();
+    }
+
+
+    public List<Evento> encerrados() {
+        return eventos.stream()
+                .filter(Evento::jaTerminou)
+                .sorted(POR_HORARIO.reversed())
+                .toList();
+    }
+
+    public List<Evento> buscarPorCategoria(Categoria categoria) {
+        return eventos.stream()
+                .filter(evento -> evento.getCategoria() == categoria)
+                .sorted(POR_HORARIO)
+                .toList();
+    }
+
+
     public List<Evento> acontecendoAgora(Usuario usuario) {
-        List<Evento> resultado = new ArrayList<>();
-        for (Evento evento : eventos) {
-            if (evento.estaAcontecendo() && usuario.temInteresse(evento.getCategoria())) {
-                resultado.add(evento);
-            }
-        }
-        return resultado;
+        return emAndamento().stream()
+                .filter(evento -> usuario.temInteresse(evento.getCategoria()))
+                .toList();
     }
 }

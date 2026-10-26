@@ -28,12 +28,13 @@ public class Menu {
                 case 2 -> cadastrarEvento();
                 case 3 -> listarUsuarios();
                 case 4 -> listarEventos();
-                case 5 -> buscarPorCategoria();
-                case 6 -> verNotificacoes();
-                case 7 -> System.out.println("Programa encerrado.");
-                default -> System.out.println("Opção inválida. Escolha de 1 a 7.");
+                case 5 -> consultarPorSituacao();
+                case 6 -> buscarPorCategoria();
+                case 7 -> verNotificacoes();
+                case 8 -> System.out.println("Programa encerrado.");
+                default -> System.out.println("Opção inválida. Escolha de 1 a 8.");
             }
-        } while (opcao != 7);
+        } while (opcao != 8);
     }
 
     private void mostrarOpcoes() {
@@ -41,17 +42,18 @@ public class Menu {
         System.out.println("1 - Cadastrar usuário");
         System.out.println("2 - Cadastrar evento");
         System.out.println("3 - Listar usuários");
-        System.out.println("4 - Listar eventos");
-        System.out.println("5 - Buscar eventos por categoria");
-        System.out.println("6 - Ver notificações");
-        System.out.println("7 - Sair");
+        System.out.println("4 - Listar eventos (por horário)");
+        System.out.println("5 - Eventos por situação");
+        System.out.println("6 - Buscar eventos por categoria");
+        System.out.println("7 - Ver notificações");
+        System.out.println("8 - Sair");
     }
 
     private void titulo(String texto) {
         System.out.println("\n--- " + texto.toUpperCase() + " ---");
     }
 
-    // usuários
+    // ---------- usuários ----------
 
     private void cadastrarUsuario() {
         titulo("Cadastro de usuário");
@@ -127,7 +129,7 @@ public class Menu {
                 .collect(Collectors.joining(", "));
     }
 
-    // eventos
+    // ---------- eventos ----------
 
     private void cadastrarEvento() {
         titulo("Cadastro de evento");
@@ -176,9 +178,44 @@ public class Menu {
     private void listarEventos() {
         titulo("Eventos cadastrados");
 
-        List<Evento> lista = eventos.listar();
+        List<Evento> lista = eventos.listarOrdenados();
         if (lista.isEmpty()) {
             System.out.println("Nenhum evento cadastrado.");
+            return;
+        }
+
+        for (Evento evento : lista) {
+            evento.exibirDetalhes();
+        }
+    }
+
+    private void consultarPorSituacao() {
+        titulo("Eventos por situação");
+        System.out.println("1 - Acontecendo agora");
+        System.out.println("2 - Próximos");
+        System.out.println("3 - Encerrados");
+        System.out.println("4 - Todos, separados por situação");
+        System.out.println("0 - Voltar");
+
+        switch (Entrada.inteiro("Opção: ")) {
+            case 1 -> mostrarGrupo("Acontecendo agora", eventos.emAndamento());
+            case 2 -> mostrarGrupo("Próximos", eventos.proximos());
+            case 3 -> mostrarGrupo("Encerrados", eventos.encerrados());
+            case 4 -> {
+                mostrarGrupo("Acontecendo agora", eventos.emAndamento());
+                mostrarGrupo("Próximos", eventos.proximos());
+                mostrarGrupo("Encerrados", eventos.encerrados());
+            }
+            case 0 -> { }
+            default -> System.out.println("Opção inválida.");
+        }
+    }
+
+    private void mostrarGrupo(String titulo, List<Evento> lista) {
+        System.out.println("\n=== " + titulo + " (" + lista.size() + ") ===");
+
+        if (lista.isEmpty()) {
+            System.out.println("Nenhum evento.");
             return;
         }
 
@@ -234,7 +271,7 @@ public class Menu {
         }
     }
 
-    // categorias
+    // ---------- categorias ----------
 
     private void listarCategorias() {
         for (Categoria categoria : Categoria.values()) {
