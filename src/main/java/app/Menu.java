@@ -7,6 +7,7 @@ import service.EventoService;
 import service.UsuarioService;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,10 +32,12 @@ public class Menu {
                 case 5 -> consultarPorSituacao();
                 case 6 -> buscarPorCategoria();
                 case 7 -> verNotificacoes();
-                case 8 -> System.out.println("Programa encerrado.");
-                default -> System.out.println("Opção inválida. Escolha de 1 a 8.");
+                case 8 -> participarDeEvento();
+                case 9 -> verParticipacoes();
+                case 10 -> System.out.println("Programa encerrado.");
+                default -> System.out.println("Opção inválida. Escolha de 1 a 10.");
             }
-        } while (opcao != 8);
+        } while (opcao != 10);
     }
 
     private void mostrarOpcoes() {
@@ -46,7 +49,9 @@ public class Menu {
         System.out.println("5 - Eventos por situação");
         System.out.println("6 - Buscar eventos por categoria");
         System.out.println("7 - Ver notificações");
-        System.out.println("8 - Sair");
+        System.out.println("8 - Participar de um evento");
+        System.out.println("9 - Minhas participações");
+        System.out.println("10 - Sair");
     }
 
     private void titulo(String texto) {
@@ -99,6 +104,20 @@ public class Menu {
                 System.out.println("Adicionada: " + categoria.getDescricao());
             }
         }
+    }
+
+    // pede o ID e devolve o usuário ou null se não der para continuar
+    private Usuario pedirUsuario() {
+        if (usuarios.listar().isEmpty()) {
+            System.out.println("Nenhum usuário cadastrado.");
+            return null;
+        }
+
+        Usuario usuario = usuarios.buscarPorId(Entrada.inteiro("ID do usuário: "));
+        if (usuario == null) {
+            System.out.println("Usuário não encontrado.");
+        }
+        return usuario;
     }
 
     private void listarUsuarios() {
@@ -248,14 +267,8 @@ public class Menu {
     private void verNotificacoes() {
         titulo("Notificações");
 
-        if (usuarios.listar().isEmpty()) {
-            System.out.println("Nenhum usuário cadastrado.");
-            return;
-        }
-
-        Usuario usuario = usuarios.buscarPorId(Entrada.inteiro("ID do usuário: "));
+        Usuario usuario = pedirUsuario();
         if (usuario == null) {
-            System.out.println("Usuário não encontrado.");
             return;
         }
 
@@ -268,6 +281,94 @@ public class Menu {
         System.out.println("Acontecendo agora para " + usuario.getNome() + ":");
         for (Evento evento : emAndamento) {
             evento.exibirDetalhes();
+        }
+    }
+
+    // ---------- participações ----------
+
+    private void participarDeEvento() {
+        titulo("Participar de um evento");
+
+        Usuario usuario = pedirUsuario();
+        if (usuario == null) {
+            return;
+        }
+
+        List<Evento> disponiveis = new ArrayList<>(eventos.emAndamento());
+        disponiveis.addAll(eventos.proximos());
+
+        if (disponiveis.isEmpty()) {
+            System.out.println("Nenhum evento disponível no momento.");
+            return;
+        }
+
+        System.out.println("\nEventos disponíveis:");
+        for (Evento evento : disponiveis) {
+            evento.exibirDetalhes();
+        }
+
+        int id = Entrada.inteiro("\nID do evento (0 para voltar): ");
+        if (id == 0) {
+            return;
+        }
+
+        Evento escolhido = eventos.buscarPorId(id);
+        if (escolhido == null || escolhido.jaTerminou()) {
+            System.out.println("Evento não encontrado ou já encerrado.");
+            return;
+        }
+
+        if (usuario.participaDe(escolhido)) {
+            System.out.println("A participação nesse evento já está confirmada.");
+            return;
+        }
+
+        if (Entrada.confirmar("Confirmar participação em \"" + escolhido.getNome() + "\"?")) {
+            usuario.confirmarParticipacao(escolhido);
+            System.out.println("Participação confirmada!");
+        } else {
+            System.out.println("Participação não confirmada.");
+        }
+    }
+
+    private void verParticipacoes() {
+        titulo("Participações confirmadas");
+
+        Usuario usuario = pedirUsuario();
+        if (usuario == null) {
+            return;
+        }
+
+        List<Evento> lista = usuario.getParticipacoes();
+        if (lista.isEmpty()) {
+            System.out.println(usuario.getNome() + " ainda não confirmou participação em nenhum evento.");
+            return;
+        }
+
+        for (Evento evento : lista) {
+            evento.exibirDetalhes();
+        }
+
+        if (!Entrada.confirmar("\nDeseja cancelar alguma participação?")) {
+            return;
+        }
+
+        Evento escolhido = eventos.buscarPorId(Entrada.inteiro("ID do evento a cancelar: "));
+        if (escolhido == null || !usuario.participaDe(escolhido)) {
+            System.out.println("Nenhuma participação confirmada com esse ID.");
+            return;
+        }
+
+        if (escolhido.jaTerminou()) {
+            System.out.println("Esse evento já foi encerrado e não pode ser cancelado.");
+            return;
+        }
+
+        if (Entrada.confirmar("Cancelar participação em \"" + escolhido.getNome() + "\"?")) {
+            usuario.cancelarParticipacao(escolhido);
+            System.out.println("Participação cancelada.");
+        } else {
+            System.out.println("A participação foi mantida.");
         }
     }
 

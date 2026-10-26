@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.Scanner;
 
+// leitura segura do teclado
 public class Entrada {
 
     private static final Scanner scanner = new Scanner(System.in);
@@ -23,6 +24,19 @@ public class Entrada {
             }
         } while (texto.isEmpty());
         return texto;
+    }
+
+    public static boolean confirmar(String mensagem) {
+        while (true) {
+            String resposta = texto(mensagem + " (S/N): ").toUpperCase();
+            if (resposta.equals("S")) {
+                return true;
+            }
+            if (resposta.equals("N")) {
+                return false;
+            }
+            System.out.println("Responda com S ou N.");
+        }
     }
 
     public static int inteiro(String mensagem) {

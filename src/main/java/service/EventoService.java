@@ -36,11 +36,21 @@ public class EventoService {
         return evento;
     }
 
+    // devolve null se não encontrar
+    public Evento buscarPorId(int id) {
+        for (Evento evento : eventos) {
+            if (evento.getId() == id) {
+                return evento;
+            }
+        }
+        return null;
+    }
+
     public List<Evento> listar() {
         return List.copyOf(eventos);
     }
 
-
+    // do mais próximo (ou mais antigo) para o mais distante
     public List<Evento> listarOrdenados() {
         return eventos.stream().sorted(POR_HORARIO).toList();
     }
@@ -59,7 +69,7 @@ public class EventoService {
                 .toList();
     }
 
-
+    // os mais recentes aparecem primeiro
     public List<Evento> encerrados() {
         return eventos.stream()
                 .filter(Evento::jaTerminou)
@@ -74,7 +84,7 @@ public class EventoService {
                 .toList();
     }
 
-
+    // eventos em andamento que interessam ao usuário
     public List<Evento> acontecendoAgora(Usuario usuario) {
         return emAndamento().stream()
                 .filter(evento -> usuario.temInteresse(evento.getCategoria()))
